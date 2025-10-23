@@ -17,6 +17,7 @@ def __narwhals_namespace__(version: Version) -> DataFusionNamespace:
 
 def is_native(native_object:object) -> TypeIs[DataFusionLazyFrame]:
     import datafusion
+
     return isinstance(native_object, datafusion.DataFrame)
 
 

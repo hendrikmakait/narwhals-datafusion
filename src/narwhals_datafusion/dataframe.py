@@ -8,8 +8,13 @@ if TYPE_CHECKING:
     import datafusion
     from narwhals.dataframe import LazyFrame
     from narwhals_datafusion.expr import DataFusionExpr
+
+    from narwhals_datafusion.namespace import DataFusionNamespace
     from narwhals._utils import Version
     from narwhals.dtypes import DType
+    from narwhals._utils import _LimitedContext
+    from typing_extensions import Self
+    from types import ModuleType
 
 
 class DataFusionLazyFrame(
@@ -32,12 +37,33 @@ class DataFusionLazyFrame(
         if validate_backend_version:
             self._validate_backend_version()
 
-    from_native: not_implemented = not_implemented()
-    to_narwhals: not_implemented = not_implemented()
-    __native_namespace__: not_implemented = not_implemented()
-    __narwhals_namespace__: not_implemented = not_implemented()
-    _with_native: not_implemented = not_implemented()
-    _with_version: not_implemented = not_implemented()
+    @classmethod
+    def from_native(cls, data: datafusion.DataFrame, /, *, context: _LimitedContext) -> Self:
+        return cls(data, version=context._version)
+    
+    def to_narwhals(self) -> LazyFrame[datafusion.DataFrame]:
+        return self._version.lazyframe(self, level="lazy")
+
+    def __native_namespace__(self) -> ModuleType:
+        import datafusion
+    
+        return datafusion
+    
+    def __narwhals_namespace__(self) -> DataFusionNamespace:
+        from narwhals_datafusion.namespace import DataFusionNamespace
+
+        return DataFusionNamespace(version=self._version)
+
+    def __narwhals_lazyframe__(self) -> Self:
+        return self
+
+    def _with_native(self, df: datafusion.DataFrame) -> Self:
+        return self.__class__(df, version=self._version)
+
+    
+    def _with_version(self, version: Version) -> Self:
+        return self.__class__(self._native_frame, version=version)
+
     _is_native: not_implemented = not_implemented()
     columns: not_implemented = not_implemented()
     schema: not_implemented = not_implemented()
@@ -59,7 +85,6 @@ class DataFusionLazyFrame(
     unpivot: not_implemented = not_implemented()
     with_columns: not_implemented = not_implemented()
     with_row_index: not_implemented = not_implemented()
-    __narwhals_lazyframe__: not_implemented = not_implemented()
     _iter_columns: not_implemented = not_implemented()
     aggregate: not_implemented = not_implemented()
     collect: not_implemented = not_implemented()
