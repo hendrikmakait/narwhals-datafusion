@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, cast
+from typing import TYPE_CHECKING, cast, Literal
 import operator
 from narwhals._compliant import LazyExpr
 from narwhals._utils import Implementation, not_implemented
@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from narwhals._compliant.typing import AliasNames, EvalNames, EvalSeries, WindowFunction
     from narwhals_datafusion.dataframe import DataFusionLazyFrame
     from narwhals._expression_parsing import ExprMetadata
+    from narwhals._expression_parsing import ExprKind
     from narwhals._utils import Version
     from narwhals_datafusion.namespace import DataFusionNamespace
     from typing_extensions import Self, TypeIs
@@ -121,6 +122,14 @@ class DataFusionExpr(LazyExpr["DataFusionLazyFrame", "datafusion.Expr"]):
             alias_output_names=self._alias_output_names,
             version=self._version,
         )
+    
+    def _with_alias_output_names(self, func: AliasNames | None, /) -> Self:
+        return self.__class__(
+            self._call,
+            evaluate_output_names=self._evaluate_output_names,
+            alias_output_names=func,
+            version=self._version,
+        )
 
     def __and__(self, other: Self) -> Self:
         return self._with_binary(lambda expr, other: (expr & other), other=other)
@@ -189,6 +198,49 @@ class DataFusionExpr(LazyExpr["DataFusionLazyFrame", "datafusion.Expr"]):
 
     def __ne__(self, other: Self) -> Self:
         return self._with_binary(lambda expr, other: (expr != other), other)
+
+
+    def broadcast(self, kind: Literal[ExprKind.AGGREGATION, ExprKind.LITERAL]) -> Self:
+        # Ibis does its own broadcasting.
+        return self
+
+
+
+    cum_count = not_implemented()
+    cum_max = not_implemented()
+    cum_min = not_implemented()
+    cum_prod = not_implemented()
+    cum_sum = not_implemented()
+    diff = not_implemented()
+    drop_nulls = not_implemented()
+    fill_nan =not_implemented()
+    ewm_mean = not_implemented()
+    exp = not_implemented()
+    is_first_distinct = not_implemented()
+    is_last_distinct = not_implemented()
+    is_unique = not_implemented()
+    kurtosis = not_implemented()
+    rank = not_implemented()
+    map_batches = not_implemented()
+    median = not_implemented()
+    mode = not_implemented()
+    over = not_implemented()
+    quantile = not_implemented()
+    replace_strict = not_implemented()
+    rolling_max = not_implemented()
+    rolling_mean = not_implemented()
+    rolling_min = not_implemented()
+    rolling_sum = not_implemented()
+    rolling_std = not_implemented()
+    rolling_var = not_implemented()
+    shift = not_implemented()
+    sqrt = not_implemented()
+    unique = not_implemented()
+    first = not_implemented()
+    last = not_implemented()
+    floor = not_implemented()
+    ceil = not_implemented()
+
 
     # namespaces
     str = not_implemented() # pyright: ignore[reportAssignmentType]

@@ -145,7 +145,11 @@ class DataFusionLazyFrame(
 
     unique: not_implemented = not_implemented()
     unpivot: not_implemented = not_implemented()
-    with_columns: not_implemented = not_implemented()
+
+    def with_columns(self, *exprs: DataFusionExpr) -> Self:
+        new_columns_map = dict(evaluate_exprs(self, *exprs))
+        return self._with_native(self.native.with_columns(**new_columns_map))
+
     with_row_index: not_implemented = not_implemented()
     _iter_columns: not_implemented = not_implemented()
     aggregate: not_implemented = not_implemented()

@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+from narwhals._arrow.utils import narwhals_to_native_dtype
 from narwhals._compliant.namespace import LazyNamespace
 from narwhals._utils import Implementation, not_implemented
 
+import datafusion
 from narwhals_datafusion.dataframe import DataFusionLazyFrame
 from narwhals_datafusion.expr import DataFusionExpr
 
 if TYPE_CHECKING:
-    import datafusion
     from narwhals._utils import Version
+    from narwhals.dtypes import DType
 
 class DataFusionNamespace(
     LazyNamespace[DataFusionLazyFrame, DataFusionExpr, "datafusion.DataFrame"]
@@ -31,7 +33,20 @@ class DataFusionNamespace(
         return DataFusionLazyFrame
     
     len: not_implemented = not_implemented()
-    lit: not_implemented = not_implemented()
+
+    def lit(self, value: Any, dtype: DType | type[DType] | None) -> DataFusionExpr:
+        def func(_df: DataFusionLazyFrame) -> list[datafusion.Expr]:
+            if dtype is not None:
+                return [datafusion.lit(value).cast(narwhals_to_native_dtype(dtype, self._version))]
+            return [datafusion.lit(value)]
+        
+        return DataFusionExpr(
+            func,
+            evaluate_output_names=lambda _df: ["literal"],
+            alias_output_names=None,
+            version=self._version,
+        )
+
     all_horizontal: not_implemented = not_implemented()
     any_horizontal: not_implemented = not_implemented()
     sum_horizontal: not_implemented = not_implemented()
