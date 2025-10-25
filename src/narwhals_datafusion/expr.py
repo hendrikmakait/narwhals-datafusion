@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
+from typing import TYPE_CHECKING, cast
+import operator
 from narwhals._compliant import LazyExpr
 from narwhals._utils import Implementation, not_implemented
 import datafusion
@@ -127,3 +127,72 @@ class DataFusionExpr(LazyExpr["DataFusionLazyFrame", "datafusion.Expr"]):
 
     def __or__(self, other: Self) -> Self:
         return self._with_binary(lambda expr, other: (expr | other), other=other)
+
+    def __invert__(self) -> Self:
+        invert = cast("Callable[..., datafusion.Expr]", operator.invert)
+        return self._with_elementwise(invert)
+
+    def __add__(self, other) -> Self:
+        return self._with_binary(lambda expr, other: (expr + other), other)
+
+    def __sub__(self, other) -> Self:
+        return self._with_binary(lambda expr, other: (expr - other), other)
+
+    def __rsub__(self, other) -> Self:
+        return self._with_binary(lambda expr, other: (other - expr), other)
+
+    def __mul__(self, other: Self) -> Self:
+        return self._with_binary(lambda expr, other: (expr * other), other)
+
+    def __truediv__(self, other: Self) -> Self:
+        return self._with_binary(lambda expr, other: (expr / other), other)
+
+    def __rtruediv__(self, other: Self) -> Self:
+        return self._with_binary(lambda expr, other: (other / expr), other)
+
+    def __floordiv__(self, other: Self) -> Self:
+        return self._with_binary(
+            lambda expr, other: (expr / other).floor(), other
+            ).alias("literal")
+
+    def __rfloordiv__(self, other: Self) -> Self:
+        return self._with_binary(
+            lambda expr, other: (other / expr).floor(), other
+        ).alias("literal")
+
+    def __mod__(self, other: Self) -> Self:
+        return self._with_binary(lambda expr, other: (expr % other), other)
+
+    def __rmod__(self, other: Self) -> Self:
+        return self._with_binary(lambda expr, other: (other % expr), other)
+
+    def __pow__(self, other: Self) -> Self:
+        return self._with_binary(lambda expr, other: (expr**other), other)
+
+    def __rpow__(self, other: Self) -> Self:
+        return self._with_binary(lambda expr, other: (other**expr), other)
+
+    def __gt__(self, other: Self) -> Self:
+        return self._with_binary(lambda expr, other: (expr > other), other)
+
+    def __ge__(self, other: Self) -> Self:
+        return self._with_binary(lambda expr, other: (expr >= other), other)
+
+    def __lt__(self, other: Self) -> Self:
+        return self._with_binary(lambda expr, other: (expr < other), other)
+
+    def __le__(self, other: Self) -> Self:
+        return self._with_binary(lambda expr, other: (expr <= other), other)
+
+    def __eq__(self, other: Self) -> Self:
+        return self._with_binary(lambda expr, other: (expr == other), other)
+
+    def __ne__(self, other: Self) -> Self:
+        return self._with_binary(lambda expr, other: (expr != other), other)
+
+    # namespaces
+    str = not_implemented() # pyright: ignore[reportAssignmentType]
+    dt = not_implemented()  # pyright: ignore[reportAssignmentType]
+    cat = not_implemented()  # pyright: ignore[reportAssignmentType]
+    list = not_implemented()  # pyright: ignore[reportAssignmentType]
+    struct = not_implemented()  # pyright: ignore[reportAssignmentType]
