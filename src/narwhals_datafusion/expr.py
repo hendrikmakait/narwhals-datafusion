@@ -107,6 +107,16 @@ class DataFusionExpr(LazyExpr["DataFusionLazyFrame", "datafusion.Expr"]):
             ]
 
         return func
+    
+    def _with_callable(
+        self, call: Callable[..., datafusion.Expr], /, **expressifiable_args: Self | Any
+    ) -> Self:
+        return self.__class__(
+            self._callable_to_eval_series(call, **expressifiable_args),
+            evaluate_output_names=self._evaluate_output_names,
+            alias_output_names=self._alias_output_names,
+            version=self._version,
+        )
 
     def _with_elementwise(
         self, call: Callable[..., datafusion.Expr], /, **expressifiable_args: Self | Any
@@ -234,8 +244,23 @@ class DataFusionExpr(LazyExpr["DataFusionLazyFrame", "datafusion.Expr"]):
     def is_null(self) -> Self:
         return self._with_elementwise(lambda _input: _input.is_null())
 
+    def max(self) -> Self:
+        return self._with_callable(lambda _input: datafusion.functions.max(_input))
+
+    def mean(self) -> Self:
+        return self._with_callable(lambda _input: datafusion.functions.mean(_input))
+
+    def median(self) -> Self:
+        return self._with_callable(lambda _input: datafusion.functions.median(_input))
+
+    def min(self) -> Self:
+        return self._with_callable(lambda _input: datafusion.functions.min(_input))
+
     def sqrt(self) -> Self:
         return self._with_elementwise(lambda _input: _input.sqrt())
+
+    def sum(self) -> Self:
+        return self._with_callable(lambda _input: datafusion.functions.sum(_input))
 
     def broadcast(self, kind: Literal[ExprKind.AGGREGATION, ExprKind.LITERAL]) -> Self:
         # datafusion does its own broadcasting.
@@ -255,7 +280,6 @@ class DataFusionExpr(LazyExpr["DataFusionLazyFrame", "datafusion.Expr"]):
     kurtosis = not_implemented()
     rank = not_implemented()
     map_batches = not_implemented()
-    median = not_implemented()
     mode = not_implemented()
     over = not_implemented()
     quantile = not_implemented()
@@ -266,7 +290,9 @@ class DataFusionExpr(LazyExpr["DataFusionLazyFrame", "datafusion.Expr"]):
     rolling_sum = not_implemented()
     rolling_std = not_implemented()
     rolling_var = not_implemented()
+    round = not_implemented()
     shift = not_implemented()
+    skew = not_implemented()
     unique = not_implemented()
     first = not_implemented()
     last = not_implemented()

@@ -123,7 +123,6 @@ class DataFusionLazyFrame(
         ]
         return self._with_native(self.native.select(*selection))
 
-    select: not_implemented = not_implemented()
     def select(self, *exprs: DataFusionExpr) -> Self:
         new_columns_map = evaluate_exprs(self, *exprs)
         if not new_columns_map:
@@ -152,7 +151,12 @@ class DataFusionLazyFrame(
 
     with_row_index: not_implemented = not_implemented()
     _iter_columns: not_implemented = not_implemented()
-    aggregate: not_implemented = not_implemented()
+
+    def aggregate(self, *exprs: DataFusionExpr) -> Self:
+        new_columns_map = evaluate_exprs(self, *exprs)
+        return self._with_native(
+            self._native_frame.aggregate([], [val.alias(col) for col, val in new_columns_map])
+        )
 
     def collect(self, backend: ModuleType | Implementation | str | None, **kwargs: Any) -> CompliantDataFrameAny:
         if backend is None or backend is Implementation.PYARROW:
