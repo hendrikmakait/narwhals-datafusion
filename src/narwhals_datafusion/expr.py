@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, cast, Literal
 import operator
+from narwhals._arrow.utils import narwhals_to_native_dtype
 from narwhals._compliant import LazyExpr
 from narwhals._utils import Implementation, not_implemented
 import datafusion
+from narwhals.dtypes import DType
+from narwhals.typing import IntoDType
 
 if TYPE_CHECKING:
     from collections.abc import Sequence, Callable
@@ -176,10 +179,10 @@ class DataFusionExpr(LazyExpr["DataFusionLazyFrame", "datafusion.Expr"]):
         return self._with_binary(lambda expr, other: (other % expr), other)
 
     def __pow__(self, other: Self) -> Self:
-        return self._with_binary(lambda expr, other: (expr**other), other)
+        return self._with_binary(lambda expr, other: datafusion.functions.power(expr, other), other)
 
     def __rpow__(self, other: Self) -> Self:
-        return self._with_binary(lambda expr, other: (other**expr), other)
+        return self._with_binary(lambda expr, other: datafusion.functions.power(other, expr), other)
 
     def __gt__(self, other: Self) -> Self:
         return self._with_binary(lambda expr, other: (expr > other), other)
@@ -199,12 +202,44 @@ class DataFusionExpr(LazyExpr["DataFusionLazyFrame", "datafusion.Expr"]):
     def __ne__(self, other: Self) -> Self:
         return self._with_binary(lambda expr, other: (expr != other), other)
 
+    def abs(self) -> Self:
+        return self._with_elementwise(lambda _input: _input.abs())
+    
+    def cast(self, dtype: IntoDType) -> Self:
+        native_dtype = narwhals_to_native_dtype(dtype, self._version)
+        return self._with_elementwise(lambda _input: _input.cast(native_dtype))
+
+    def ceil(self) -> Self:
+        return self._with_elementwise(lambda _input: _input.ceil())
+
+    def exp(self) -> Self:
+        return self._with_elementwise(lambda _input: _input.exp())
+
+    def fill_nan(self, value: float | None) -> Self:
+        return self._with_elementwise(
+            lambda _input, value: _input.fill_nan(value), value=value
+        )
+    
+    def fill_null(self, value: Self | Any, strategy: Any, limit: int | None) -> Self:
+        if strategy is not None:
+            raise NotImplementedError("TODO")
+        
+        return self._with_elementwise(
+            lambda _input, value: _input.fill_null(value), value=value
+        )
+    
+    def floor(self) -> Self:
+        return self._with_elementwise(lambda _input: _input.floor())
+
+    def is_null(self) -> Self:
+        return self._with_elementwise(lambda _input: _input.is_null())
+
+    def sqrt(self) -> Self:
+        return self._with_elementwise(lambda _input: _input.sqrt())
 
     def broadcast(self, kind: Literal[ExprKind.AGGREGATION, ExprKind.LITERAL]) -> Self:
-        # Ibis does its own broadcasting.
+        # datafusion does its own broadcasting.
         return self
-
-
 
     cum_count = not_implemented()
     cum_max = not_implemented()
@@ -213,9 +248,7 @@ class DataFusionExpr(LazyExpr["DataFusionLazyFrame", "datafusion.Expr"]):
     cum_sum = not_implemented()
     diff = not_implemented()
     drop_nulls = not_implemented()
-    fill_nan =not_implemented()
     ewm_mean = not_implemented()
-    exp = not_implemented()
     is_first_distinct = not_implemented()
     is_last_distinct = not_implemented()
     is_unique = not_implemented()
@@ -234,12 +267,9 @@ class DataFusionExpr(LazyExpr["DataFusionLazyFrame", "datafusion.Expr"]):
     rolling_std = not_implemented()
     rolling_var = not_implemented()
     shift = not_implemented()
-    sqrt = not_implemented()
     unique = not_implemented()
     first = not_implemented()
     last = not_implemented()
-    floor = not_implemented()
-    ceil = not_implemented()
 
 
     # namespaces
