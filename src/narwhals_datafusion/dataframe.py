@@ -19,6 +19,8 @@ if TYPE_CHECKING:
     from narwhals._utils import _LimitedContext
     from typing_extensions import Self, TypeIs
     from narwhals._compliant.typing import CompliantDataFrameAny
+    from io import BytesIO
+    from pathlib import Path
     from typing import Any
     from types import ModuleType
 
@@ -162,4 +164,5 @@ class DataFusionLazyFrame(
         msg = f"Unsupported `backend` value: {backend}"
         raise ValueError(msg)
 
-    sink_parquet: not_implemented = not_implemented()
+    def sink_parquet(self, file: str | Path | BytesIO) -> None:
+        return self.native.write_parquet(file)
