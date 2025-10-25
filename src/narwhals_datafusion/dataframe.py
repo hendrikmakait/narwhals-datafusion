@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from narwhals._compliant import CompliantLazyFrame
 from narwhals._utils import Implementation, ValidateBackendVersion, not_implemented, parse_columns_to_drop
 from narwhals._arrow.utils import native_to_narwhals_dtype
+from narwhals_datafusion.utils import evaluate_exprs
 
 if TYPE_CHECKING:
     import datafusion
@@ -74,6 +75,11 @@ class DataFusionLazyFrame(
 
     def _with_version(self, version: Version) -> Self:
         return self.__class__(self.native, version=version)
+    
+    def _evaluate_expr(self, expr: DataFusionExpr) -> datafusion.Expr:
+        result = expr(self)
+        assert len(result) == 1
+        return result[0]
 
     @property
     def columns(self) -> list[str]:
@@ -118,7 +124,20 @@ class DataFusionLazyFrame(
         return self._with_native(self.native.select(*selection))
 
     select: not_implemented = not_implemented()
-    simple_select: not_implemented = not_implemented()
+    def select(self, *exprs: DataFusionExpr) -> Self:
+        new_columns_map = evaluate_exprs(self, *exprs)
+        if not new_columns_map:
+            msg = "At least one expression must be passed to LazyFrame.select"
+            raise ValueError(msg)
+        try:
+            return self._with_native(self.native.select(*(val.alias(col) for col, val in new_columns_map)))
+        except Exception as e:
+            # TODO: Improve error handling
+            raise e
+    
+    def simple_select(self, *column_names: str) -> Self:
+        return self._with_native(self.native.select_columns(*column_names))
+
     sort: not_implemented = not_implemented()
 
     def tail(self, n: int) -> Self:
