@@ -1,0 +1,3 @@
+[submodule "narwhals"]
+	path = narwhals
+	url = git@github.com:narwhals-dev/narwhals.git
